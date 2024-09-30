@@ -31,8 +31,8 @@ return [
     |             ]
     */
     'bots' => [
-        'mybot' => [
-            'token' => env('TELEGRAM_BOT_TOKEN', '7355177159:AAH770Myz14wJGk44HbpdZ-kMP3jLWy94fI'),
+        'gtennis_bot' => [
+            'token' => env('TELEGRAM_BOT_TOKEN', ''),
             'certificate_path' => env('TELEGRAM_CERTIFICATE_PATH', 'YOUR-CERTIFICATE-PATH'),
             'webhook_url' => env('TELEGRAM_WEBHOOK_URL', 'YOUR-BOT-WEBHOOK-URL'),
             /*
@@ -59,7 +59,7 @@ return [
     | your default bot for regular use.
     |
     */
-    'default' => 'mybot',
+    'default' => 'gtennis_bot',
 
     /*
     |--------------------------------------------------------------------------
