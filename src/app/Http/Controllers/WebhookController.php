@@ -130,21 +130,27 @@ class WebhookController extends Controller
         //Разделяем строку ответа на массив по разделителю '_'
         //[0] -> Название команды, например StartCommand название будет Start
         //[1] -> Метод класса команды, например метод checkIsUserInWhiteList в классе StartCommand
+        //[2] -> Применяется как доп параметр, пока только в AppointmentCommand
         $callbackData = explode('_', $webhook->callbackQuery->data);
 
-        //Если кол-во элементов в массиве не равно двум, значит на кнопке был неправильный колбек
-        if (count($callbackData) !== 2){
+        if (2 !== count($callbackData) && 3 !== count($callbackData)) {
             NotificationHelper::SendNotificationToChannel(
-                'Пытались обработать callback, но пришли неверные параметры',
+                'Пытались обработать callback, но пришли неверные параметры, count($callbackData) = '.count($callbackData),
                 $webhook
             );
-            return;
         }
 
-        //Если элемента 2, значит пробуем вызвать переданный метод, переданного класса из колбека кнопки.
         $className = "App\Commands\\".$callbackData[0]."Command";
         $class = new $className;
         $method = $callbackData[1];
-        $class->$method($userId, $messageId, $this->botsManager);
+        switch (count($callbackData)) {
+            case 2:
+                $class->$method($userId, $messageId, $this->botsManager);
+                break;
+            case 3:
+                //Если 3 элемента, значит в 3 какой то доп. параметр
+                $class->$method($userId, $messageId, $this->botsManager, $callbackData[2]);
+                break;
+        }
     }
 }
