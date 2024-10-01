@@ -4,6 +4,7 @@ use App\Classes\Helpers\NotificationHelper;
 use App\Models\TelegramUser;
 use App\Repositories\TelegramUsersRepository;
 use App\Repositories\WhiteListUserRepository;
+use Illuminate\Support\Traits\EnumeratesValues;
 use Telegram\Bot\BotsManager;
 use Telegram\Bot\Commands\Command;
 use Telegram\Bot\Exceptions\TelegramSDKException;
@@ -48,9 +49,11 @@ class StartCommand extends Command
         //Если юзер не авторизовался - отправляем дефолтное сообщение
         if (!$telegramUser->is_auth) {
             $this->sendWelcomeMessageIfUserNotAuthorized();
+            return;
         }
 
         //Если все ок - отправляем главное меню
+        $this->sendMainMenu();
     }
 
     /**
@@ -88,7 +91,20 @@ class StartCommand extends Command
      */
     public function sendWelcomeMessageIfUserNotAuthorized(): void
     {
-        $reply_markup = Keyboard::make([
+        $reply_markup = self::getWelcomeMessageIfUserNotAuthorized();
+
+        $this->replyWithMessage([
+            'text' => 'Привет! Кажется ты тут впервые✋',
+            'reply_markup' =>$reply_markup
+        ]);
+    }
+
+    /**
+     * @return EnumeratesValues|Keyboard
+     */
+    public static function getWelcomeMessageIfUserNotAuthorized(): EnumeratesValues|Keyboard
+    {
+        return Keyboard::make([
             'inline_keyboard' => [
                 [
                     [
@@ -98,11 +114,6 @@ class StartCommand extends Command
                 ]
             ],
             'resize_keyboard' => true,
-        ]);
-
-        $this->replyWithMessage([
-            'text' => 'Привет! Кажется ты тут впервые✋',
-            'reply_markup' =>$reply_markup
         ]);
     }
 
@@ -129,28 +140,100 @@ class StartCommand extends Command
                         [
                             'text' => 'Написать администратору',
                             'url' => 'https://t.me/indertruster',
-                            'callback_data' => 'Start_checkIsUserInWhiteList',
                         ],
                     ]
                 ],
                 'resize_keyboard' => true,
             ]);
         } else {
-            $msg = 'Мы нашли вас в белом спике';
-            $reply_markup = Keyboard::make([
-                'inline_keyboard' => [
-                    [
-                        [
-                            'text' => 'Но дальше пока ничего не работает)',
-                            'callback_data' => 'Start_checkIsUserInWhiteList',
-                        ],
-                    ]
-                ],
-                'resize_keyboard' => true,
-            ]);
+            //Если юзер есть в белом списке - изменим его статус авторизации
+            $telegramUser = $this->telegramUsersRepository->findUserById($userId);
+            $telegramUser->is_auth = 1;
+            $telegramUser->save();
+            //Отправим ему главное меню
+            $msg = $this->getMaiMenuMsg();
+            $reply_markup = $this->getMainMenuMarkup();
         }
 
         //Отправка ответа с изменение сообщения
+        $bot = $botsManager->bot();
+        $bot->editMessageText([
+            'chat_id'                  => $userId,
+            'message_id'               => $messageId,
+            'text'                     => $msg,
+            'reply_markup'             => $reply_markup
+        ]);
+    }
+
+    /**
+     * @return string
+     */
+    public function getMaiMenuMsg(): string
+    {
+        return 'Это главное меню бота:';
+    }
+
+    /**
+     * Получаем разметку главного меню.
+     *
+     * @return EnumeratesValues|Keyboard
+     */
+    public function getMainMenuMarkup(): EnumeratesValues|Keyboard
+    {
+        return Keyboard::make([
+            'inline_keyboard' => [
+                [
+                    [
+                        'text' => '👤 Мой профиль',
+                        'callback_data' => 'Profile_getMyProfile',
+                    ],
+                ],
+                [
+                    [
+                        'text' => '📝 Управление моими записями',
+                        'callback_data' => 'Start_checkIsUserInWhiteList',
+                    ],
+                ],
+                [
+                    [
+                        'text' => '🕒 Посмотреть ячейки для записи',
+                        'callback_data' => 'Start_checkIsUserInWhiteList',
+                    ],
+                ],
+            ],
+            'resize_keyboard' => true,
+        ]);
+    }
+
+    /**
+     * Отправляем главное меню юзеру.
+     *
+     * @return void
+     */
+    public function sendMainMenu(): void
+    {
+        $reply_markup = $this->getMainMenuMarkup();
+        $this->replyWithMessage([
+            'text' => $this->getMaiMenuMsg(),
+            'reply_markup' =>$reply_markup
+        ]);
+    }
+
+    /**
+     * Меняем сообщение на главное меню.
+     *
+     * @param int $userId
+     * @param int $messageId
+     * @param BotsManager $botsManager
+     *
+     * @return void
+     *
+     * @throws TelegramSDKException
+     */
+    public function sendMainMenuWithEditMessage(int $userId, int $messageId, BotsManager $botsManager): void
+    {
+        $reply_markup = $this->getMainMenuMarkup();
+        $msg = self::getMaiMenuMsg();
         $bot = $botsManager->bot();
         $bot->editMessageText([
             'chat_id'                  => $userId,
