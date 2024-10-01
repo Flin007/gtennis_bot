@@ -124,23 +124,27 @@ class WebhookController extends Controller
             $command = ltrim($webhook->callbackQuery->data, '/');
             $update = Telegram::commandsHandler(true);
             Telegram::triggerCommand($command, $update);
-        }else{
-            //Разделяем строку ответа на массив по разделителю '_'
-            //[0] -> Название команды, например StartCommand название будет Start
-            //[1] -> Метод класса команды, например метод checkIsUserInWhiteList в классе StartCommand
-            $callbackData = explode('_', $webhook->callbackQuery->data);
-
-            if (count($callbackData) === 2) {
-                $className = "App\Commands\\".$callbackData[0]."Command";
-                $class = new $className;
-                $method = $callbackData[1];
-                $class->$method($userId, $messageId, $this->botsManager);
-            }else{
-                NotificationHelper::SendNotificationToChannel(
-                    'Пытались обработать callback, но пришли неверные параметры',
-                    $webhook
-                );
-            }
+            return;
         }
+
+        //Разделяем строку ответа на массив по разделителю '_'
+        //[0] -> Название команды, например StartCommand название будет Start
+        //[1] -> Метод класса команды, например метод checkIsUserInWhiteList в классе StartCommand
+        $callbackData = explode('_', $webhook->callbackQuery->data);
+
+        //Если кол-во элементов в массиве не равно двум, значит на кнопке был неправильный колбек
+        if (count($callbackData) !== 2){
+            NotificationHelper::SendNotificationToChannel(
+                'Пытались обработать callback, но пришли неверные параметры',
+                $webhook
+            );
+            return;
+        }
+
+        //Если элемента 2, значит пробуем вызвать переданный метод, переданного класса из колбека кнопки.
+        $className = "App\Commands\\".$callbackData[0]."Command";
+        $class = new $className;
+        $method = $callbackData[1];
+        $class->$method($userId, $messageId, $this->botsManager);
     }
 }
