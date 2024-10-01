@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('telegram_users', function (Blueprint $table){
-            $table->addColumn('boolean', 'is_auth')->after('id');
+            $table->addColumn('boolean', 'is_auth')->after('id')->default(0);
         });
     }
 
