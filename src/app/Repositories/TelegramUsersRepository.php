@@ -12,16 +12,14 @@ class TelegramUsersRepository extends ModelRepository
     }
 
     /**
-     * Returns the language selected by the user.
      * @param int $userId
-     * @return string
+     *
+     * @return mixed|null
      */
-    public function getSelectedLanguageByUserId(int $userId): string
+    public function findUserById(int $userId): mixed
     {
-        $lang = $this->createQueryBuilder()
-            ->select('selected_language')
-            ->where('user_id', $userId)
+        return $this->createQueryBuilder()
+            ->where('user_id', '=', $userId)
             ->first();
-        return $lang ? $lang->selected_language : env('DEFAULT_LANGUAGE');
     }
 }
