@@ -191,13 +191,13 @@ class StartCommand extends Command
                 [
                     [
                         'text' => '📝 Управление моими записями',
-                        'callback_data' => 'Start_checkIsUserInWhiteList',
+                        'callback_data' => 'Appointment_showMyAppointments',
                     ],
                 ],
                 [
                     [
                         'text' => '🕒 Посмотреть ячейки для записи',
-                        'callback_data' => 'Start_checkIsUserInWhiteList',
+                        'callback_data' => 'Appointment_showAvailableDates',
                     ],
                 ],
             ],
