@@ -17,11 +17,12 @@ class AppointmentRepository extends ModelRepository
      *
      * @return mixed|null
      */
-    public function getAppointmentsByUserId($userId): mixed
+    public function getActiveAppointmentsByUserId($userId): mixed
     {
         return $this->createQueryBuilder()
             ->where('user_id', $userId)
-            ->where('date' >= Carbon::now()->toDateString())
+            ->where('date', '>=', Carbon::now()->toDateString())
+            ->where('status', 1)
             ->get();
     }
 }
