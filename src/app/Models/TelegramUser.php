@@ -9,5 +9,6 @@ class TelegramUser extends Model
 {
     use HasFactory;
     protected $table = 'telegram_users';
-    protected $guarded = false;
+    //Защищаем от хаписи колонку is_admin, чтобы её можно было менять только на прямую в бд
+    protected $guarded = ['is_admin'];
 }
