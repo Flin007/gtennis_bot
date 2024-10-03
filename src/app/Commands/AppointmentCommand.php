@@ -258,7 +258,7 @@ class AppointmentCommand extends Command
 
         //Не получилось ничего создать?
         if (!isset($res->id)){
-            NotificationHelper::SendNotificationToChannel('Не получилось создать запись', json_encode(['user_id' => $userId, 'date' => $date], JSON_UNESCAPED_UNICODE));
+            NotificationHelper::SendNotificationToChannel('Не получилось создать запись', ['user_id' => $userId, 'date' => $date]);
         }
 
         $msg = 'Ваша запись успешно создана!🔥🔥';
@@ -312,7 +312,7 @@ class AppointmentCommand extends Command
     {
         $appointment = Appointment::find($appointmentId);
         if (!isset($appointment->id)){
-            NotificationHelper::SendNotificationToChannel('Хотели удалить запись, но не смогли найти', json_encode(['user_id' => $userId, 'id' => $appointmentId], JSON_UNESCAPED_UNICODE));
+            NotificationHelper::SendNotificationToChannel('Хотели удалить запись, но не смогли найти', ['user_id' => $userId, 'id' => $appointmentId]);
         }
         $appointment->status = 0;
         $appointment->save();

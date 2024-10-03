@@ -42,7 +42,7 @@ class AnnouncementCommand extends Command
 
         //Если не нашли юзера, отправим лог с ошибкой
         if (!isset($telegramUser->is_admin)) {
-            NotificationHelper::SendNotificationToChannel('Не нашли юзера в /announcement', json_encode($userData, JSON_UNESCAPED_UNICODE));
+            NotificationHelper::SendNotificationToChannel('Не нашли юзера в /announcement', $userData->toArray());
             return;
         }
 

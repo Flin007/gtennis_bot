@@ -9,11 +9,11 @@ class NotificationHelper
 {
     /**
      * @param string $title
-     * @param string|Update $webhook
+     * @param array|Update $webhook
      *
      * @return void
      */
-    public static function SendNotificationToChannel(string $title, string|Update $webhook = 'Без хука'): void
+    public static function SendNotificationToChannel(string $title, array|Update $webhook = ['Без хука)']): void
     {
         $botManager = app(BotsManager::class);
         $bot = $botManager->bot();

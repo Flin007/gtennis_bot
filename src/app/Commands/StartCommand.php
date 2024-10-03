@@ -77,7 +77,7 @@ class StartCommand extends Command
 
         //Не получилось ничего создать?
         if (!isset($res->id)){
-            NotificationHelper::SendNotificationToChannel('Не получилось создать запись', json_encode($userData->toArray(), JSON_UNESCAPED_UNICODE));
+            NotificationHelper::SendNotificationToChannel('Не получилось создать запись', $userData->toArray());
             return;
         }
 
@@ -85,7 +85,7 @@ class StartCommand extends Command
         $this->sendWelcomeMessageIfUserNotAuthorized();
 
         //Отправляем уведомление о добавлении нового юзера
-        NotificationHelper::SendNotificationToChannel('Добавили нового пользователя', json_encode($userData->toArray(), JSON_UNESCAPED_UNICODE));
+        NotificationHelper::SendNotificationToChannel('Добавили нового пользователя', $userData->toArray());
     }
 
     /**
