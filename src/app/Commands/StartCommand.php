@@ -65,23 +65,27 @@ class StartCommand extends Command
      */
     public function addNewTelegramUser(User $userData): void
     {
-        $userDataArr = [
+        $res =  $this->telegramUser->updateOrCreate([
             'user_id' => $userData->id,
+        ],[
             'username' => $userData->username,
-            'first_name' => $userData->first_name ?? '',
-            'last_name' => $userData->last_name ?? '',
-            'language_code' => $userData->language_code ?? 'ru',
+            'first_name' => $userData->first_name ?? 'Не указано',
+            'last_name' => $userData->last_name ?? 'Не указано',
             'is_premium' => $userData->is_premium ?? 0,
             'is_bot' => $userData->is_bot ?? 0,
-        ];
-        //Добавляем юзера в бд
-        $this->telegramUser->insert($userDataArr);
+        ]);
+
+        //Не получилось ничего создать?
+        if (!isset($res->id)){
+            NotificationHelper::SendNotificationToChannel('Не получилось создать запись', json_encode($userData->toArray(), JSON_UNESCAPED_UNICODE));
+            return;
+        }
 
         //Отправляем письмо с прозьбой авторизоваться
         $this->sendWelcomeMessageIfUserNotAuthorized();
 
         //Отправляем уведомление о добавлении нового юзера
-        NotificationHelper::SendNotificationToChannel('Добавили нового пользователя', json_encode($userDataArr, 256));
+        NotificationHelper::SendNotificationToChannel('Добавили нового пользователя', json_encode($userData->toArray(), JSON_UNESCAPED_UNICODE));
     }
 
     /**
