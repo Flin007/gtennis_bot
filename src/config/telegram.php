@@ -42,6 +42,7 @@ return [
             'commands' => [
                 //Acme\Project\Commands\MyTelegramBot\BotCommand::class
                 \App\Commands\StartCommand::class,
+                \App\Commands\AnnouncementCommand::class,
             ],
         ],
 
