@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Classes\Helpers\NotificationHelper;
+use App\Commands\AppointmentCommand;
 use App\Repositories\TelegramUsersRepository;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,12 +16,16 @@ class WebhookController extends Controller
 {
     protected BotsManager $botsManager;
     protected TelegramUsersRepository $telegramUsersRepository;
+    protected AppointmentCommand $appointmentCommand;
+
     public function __construct(
         BotsManager $botsManager,
         TelegramUsersRepository $telegramUsersRepository,
+        AppointmentCommand $appointmentCommand
     ) {
         $this->botsManager = $botsManager;
         $this->telegramUsersRepository = $telegramUsersRepository;
+        $this->appointmentCommand = $appointmentCommand;
     }
 
     /**

@@ -23,6 +23,7 @@ class AppointmentCommand extends Command
     protected WhiteListUserRepository $whiteListUserRepository;
     protected TelegramUsersRepository $telegramUsersRepository;
     protected AppointmentRepository $appointmentRepository;
+    protected AnnouncementCommand $announcementCommand;
 
     public function __construct() {
         //Через app, дабы не прокидывать классы в конструктор из Webhook контроллера
@@ -30,6 +31,7 @@ class AppointmentCommand extends Command
         $this->whiteListUserRepository = app(WhiteListUserRepository::class);
         $this->telegramUsersRepository = app(TelegramUsersRepository::class);
         $this->appointmentRepository = app(AppointmentRepository::class);
+        $this->announcementCommand = app(AnnouncementCommand::class);
     }
 
     /**
@@ -294,6 +296,14 @@ class AppointmentCommand extends Command
             'text'                     => $msg,
             'reply_markup'             => $reply_markup
         ]);
+
+        //Отправим уведомление о готовности в общий чат
+        $this->announcementCommand->sendNewAppointmentMessageInGroup(
+            $userId, $date
+        );
+
+        //Проверим сколько человек готовы сыграть в эту дату
+        $this->checkCountAppointmentsByDate($date);
     }
 
     /**
@@ -319,5 +329,77 @@ class AppointmentCommand extends Command
 
         //Дальше просто перерендерим список доступных записей через готовый метод.
         $this->showMyAppointments($userId, $messageId, $botsManager);
+
+        //Отправил уведомление в общую группу
+        $this->announcementCommand->sendDeleteAppointmentMessageInGroup(
+            $userId, $appointment->date
+        );
+    }
+
+    /**
+     * Проверяем количество игроков, готовых сыграть в переданную дату и уведомляем в группу.
+     *
+     * @param string $date
+     *
+     * @return void
+     */
+    public function checkCountAppointmentsByDate(string $date): void
+    {
+        $activeAppointmentsByDate = $this->appointmentRepository->getActiveAppointmentsByDate($date);
+
+        //Что то пошло не так, т.к. вызываем этот метод после создания записи, как её может не быть?
+        if ($activeAppointmentsByDate->count() <= 0) {
+            NotificationHelper::SendNotificationToChannel('Проверяли кол-во активных записей, но их нет - '.$date);
+            return;
+        }
+
+        $telegramUsers = $this->telegramUsersRepository->findManyUsersByUserIds($activeAppointmentsByDate->pluck('user_id')->toArray());
+
+        //Непонятно как мы могли не найти юезров, сообщаем ошибку
+        if ($telegramUsers->count() <= 0) {
+            NotificationHelper::SendNotificationToChannel(
+                'Искали юзеров, но почему то не нашли!',
+                [
+                    'date' => $date,
+                    'user_ids' => $activeAppointmentsByDate->pluck('user_id')->toArray()
+                ]
+            );
+            return;
+        }
+
+        //Получаем строку формата @nick1, @nick2, @nick3
+        $userNamesInRow = '@'.implode(', @',$telegramUsers->pluck('username')->toArray());
+
+        switch ($telegramUsers->count()) {
+            //Если всего 1 человек, то мы уже отправили сообщение о том, что он хотел сыграть, нет смысла объявлять.
+            case 1:
+                return;
+            case 2:
+                $text = "{$userNamesInRow}, вы оба выбрали дату "
+                    . Carbon::parse($date)->format('d.m.Y')
+                    . ', отличный повод забронировать корт и сыграть🔥🔥';
+                break;
+            case 3:
+                $text = Carbon::parse($date)->format('d.m.Y')
+                    . " уже готовы сыграть 3 человека, {$userNamesInRow}, нужен ещё 1 для 2х2❗";
+                break;
+            case 4:
+                $text = 'Отличная новость, на '
+                    . Carbon::parse($date)->format('d.m.Y')
+                    . " собрался полный корт, 4 человека🥳🥳 {$userNamesInRow} Давайте скорее бронировать и до встречи👍";
+                break;
+            default:
+                $text = 'Список ребят, желающих сыграть  '
+                    . Carbon::parse($date)->format('d.m.Y')
+                    . ' уже ' . $telegramUsers->count() . "человек, это: {$userNamesInRow}";
+        }
+
+        //Отправляем сообщение в чат
+        app(BotsManager::class)
+            ->bot()
+            ->sendMessage([
+                'chat_id' => env('MAIN_CHAT_ID'),
+                'text' => $text,
+            ]);
     }
 }

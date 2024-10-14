@@ -38,7 +38,7 @@ class StartCommand extends Command
         //Получаем его уникальный ID
         $userId = $userData->id;
         //Пробуем найти юзера в БД
-        $telegramUser = $this->telegramUsersRepository->findUserById($userId);
+        $telegramUser = $this->telegramUsersRepository->findOneUserByUserId($userId);
 
         //Если юзера не нашли - добавляем
         if (!$telegramUser) {
@@ -151,7 +151,7 @@ class StartCommand extends Command
             ]);
         } else {
             //Если юзер есть в белом списке - изменим его статус авторизации
-            $telegramUser = $this->telegramUsersRepository->findUserById($userId);
+            $telegramUser = $this->telegramUsersRepository->findOneUserByUserId($userId);
             $telegramUser->is_auth = 1;
             $telegramUser->save();
             //Отправим ему главное меню

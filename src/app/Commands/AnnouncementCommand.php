@@ -4,6 +4,7 @@ use App\Classes\Helpers\NotificationHelper;
 use App\Models\TelegramUser;
 use App\Repositories\TelegramUsersRepository;
 use App\Repositories\WhiteListUserRepository;
+use Carbon\Carbon;
 use Illuminate\Support\Traits\EnumeratesValues;
 use Telegram\Bot\BotsManager;
 use Telegram\Bot\Commands\Command;
@@ -38,17 +39,17 @@ class AnnouncementCommand extends Command
         //Получаем его уникальный ID
         $userId = $userData->id;
         //Пробуем найти юзера в БД
-        $telegramUser = $this->telegramUsersRepository->findUserById($userId);
+        $telegramUser = $this->telegramUsersRepository->findOneUserByUserId($userId);
 
         //Если не нашли юзера, отправим лог с ошибкой
-        if (!isset($telegramUser->is_admin)) {
+        if (!isset($telegramUser->id)) {
             NotificationHelper::SendNotificationToChannel('Не нашли юзера в /announcement', $userData->toArray());
             return;
         }
 
         //Если юзер не админ - не даём доступ к анонсам от имени бота
         if (!$telegramUser->is_admin) {
-            $this->sendWelcomeMessageIfUserNotAdmin();
+            $this->sendNotAllowedMessage();
             return;
         }
 
@@ -67,10 +68,66 @@ class AnnouncementCommand extends Command
      *
      * @return void
      */
-    public function sendWelcomeMessageIfUserNotAdmin(): void
+    public function sendNotAllowedMessage(): void
     {
         $this->replyWithMessage([
             'text' => 'Команда с анонсами доступна только администраторам бота.'
         ]);
+    }
+
+    /**
+     * Отправляем всем сообщение что такой то участник создал заявку
+     *
+     * @param int $userId
+     * @param string $date
+     *
+     * @return void
+     */
+    public function sendNewAppointmentMessageInGroup(int $userId, string $date): void
+    {
+        //Пробуем найти юзера
+        $telegramUser = $this->telegramUsersRepository->findOneUserByUserId($userId);
+
+        //Если не нашли юзера, отправим лог с ошибкой
+        if (!isset($telegramUser->id)) {
+            NotificationHelper::SendNotificationToChannel('Не нашли юзера в /announcement', ['userId' => $userId, 'date' => $date]);
+            return;
+        }
+
+        //Текст сообщения
+        $text = "@{$telegramUser->username} хочет сыграть на платном корте "
+            . Carbon::parse($date)->format('d.m.Y')
+            . ', присоеденяйтесь!🎾🎾';
+        //Отправляем
+        app(BotsManager::class)
+            ->bot()
+            ->sendMessage([
+            'chat_id' => env('MAIN_CHAT_ID'),
+            'text' => $text,
+        ]);
+    }
+
+    public function sendDeleteAppointmentMessageInGroup(int $userId, string $date): void
+    {
+        //Пробуем найти юзера
+        $telegramUser = $this->telegramUsersRepository->findOneUserByUserId($userId);
+
+        //Если не нашли юзера, отправим лог с ошибкой
+        if (!isset($telegramUser->id)) {
+            NotificationHelper::SendNotificationToChannel('Не нашли юзера в /announcement', ['userId' => $userId, 'date' => $date]);
+            return;
+        }
+
+        //Текст сообщения
+        $text = "@{$telegramUser->username} не сможет сыграть "
+            . Carbon::parse($date)->format('d.m.Y')
+            . ' 😢😢';
+        //Отправляем
+        app(BotsManager::class)
+            ->bot()
+            ->sendMessage([
+                'chat_id' => env('MAIN_CHAT_ID'),
+                'text' => $text,
+            ]);
     }
 }

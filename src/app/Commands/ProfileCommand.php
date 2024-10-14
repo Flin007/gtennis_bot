@@ -48,7 +48,7 @@ class ProfileCommand extends Command
     public function getMyProfile(int $userId, int $messageId, BotsManager $botsManager):void
     {
         //Пробуем найти есть ли юзер в белом списке
-        $telegramUser = $this->telegramUsersRepository->findUserById($userId);
+        $telegramUser = $this->telegramUsersRepository->findOneUserByUserId($userId);
 
         if (!$telegramUser) {
             NotificationHelper::SendNotificationToChannel('Не согли найти юзера с id = '.$userId);
@@ -112,7 +112,7 @@ class ProfileCommand extends Command
     public function deleteAccount(int $userId, int $messageId, BotsManager $botsManager): void
     {
         //Отключаем авторизацию юзера в боте
-        $telegramUser = $this->telegramUsersRepository->findUserById($userId);
+        $telegramUser = $this->telegramUsersRepository->findOneUserByUserId($userId);
         $telegramUser->is_auth = 0;
         $telegramUser->save();
         //Разметку приветственного сообщения

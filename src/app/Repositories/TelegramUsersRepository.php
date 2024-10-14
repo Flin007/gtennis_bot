@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\TelegramUser;
+use Illuminate\Database\Eloquent\Collection;
 
 class TelegramUsersRepository extends ModelRepository
 {
@@ -16,10 +17,22 @@ class TelegramUsersRepository extends ModelRepository
      *
      * @return mixed|null
      */
-    public function findUserById(int $userId): mixed
+    public function findOneUserByUserId(int $userId): mixed
     {
         return $this->createQueryBuilder()
             ->where('user_id', '=', $userId)
             ->first();
+    }
+
+    /**
+     * @param array $userIds
+     *
+     * @return Collection
+     */
+    public function findManyUsersByUserIds(array $userIds): Collection
+    {
+        return $this->createQueryBuilder()
+            ->whereIn('user_id', $userIds)
+            ->get();
     }
 }
